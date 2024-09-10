@@ -20,21 +20,20 @@ const Product = () => {
     _productId: productId,
   });
 
-
   const formatDate = (isoString) => {
     // Create a new Date object from the ISO string
     const date = new Date(isoString);
-  
+
     // Get individual components of the date
-    const day = String(date.getDate()).padStart(2, '0'); // Get day and pad with zero if needed
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(date.getDate()).padStart(2, "0"); // Get day and pad with zero if needed
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
     const year = String(date.getFullYear()).slice(2); // Get last two digits of the year
-    const hours = String(date.getHours()).padStart(2, '0'); // Get hours
-    const minutes = String(date.getMinutes()).padStart(2, '0'); // Get minutes
-  
+    const hours = String(date.getHours()).padStart(2, "0"); // Get hours
+    const minutes = String(date.getMinutes()).padStart(2, "0"); // Get minutes
+
     // Format the date as dd/mm/yy and time as hh:mm
     return `${hours}:${minutes} |  ${day}/${month}/${year}`;
-  }
+  };
 
   const fetchProductData = async () => {
     products.map((item) => {
@@ -80,19 +79,14 @@ const Product = () => {
       } catch (error) {
         console.log(error);
         toast.error(error.message);
-      } finally {
-        // setReviewsOpen(true);
       }
     }
   };
 
   useEffect(() => {
     fetchProductData();
+    getReviews();
   }, [productId, products]);
-
-  // useEffect(() => {
-  //   console.log(currentReview);
-  // }, [currentReview.text]);
 
   return productData ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
@@ -232,10 +226,24 @@ const Product = () => {
             </form>
             {reviews.length !== 0 &&
               reviews.map((item, index) => (
-                <div className="flex justify-between border py-2 mt-2 px-2">
-                  <div>{item.text}</div>
-                  <div>{item.userId.name}</div>
-                  <div>{formatDate(item.dateCreated)}</div>
+                <div
+                  key={index}
+                  className="border rounded-lg p-4 mb-4 mt-4 shadow-sm bg-white"
+                >
+                  {/* Review Text */}
+                  <div className="text-gray-800 text-lg leading-relaxed mb-2">
+                    {item.text}
+                  </div>
+
+                  {/* Reviewer's Name and Date */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-600 text-sm">
+                      {item.userId.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {formatDate(item.dateCreated)}
+                    </div>
+                  </div>
                 </div>
               ))}
           </div>

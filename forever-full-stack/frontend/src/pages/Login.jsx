@@ -33,7 +33,6 @@ const Login = () => {
         });
         if (response.data.success) {
           setToken(response.data.token);
-          // setUserId(response.data.id);
           console.log(userId, "userrrrr idd");
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("userId", response.data.id);
