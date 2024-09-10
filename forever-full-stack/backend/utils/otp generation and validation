@@ -1,0 +1,24 @@
+import crypto from 'crypto';
+
+function generateOTP() {
+    var min = 100000;
+    var max = 999999;
+    var range = max - min + 1;
+    var otp = Math.floor(crypto.randomInt(range)) + min;
+    return otp;
+}
+
+function validateEmail(email) {
+    const re =
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+}
+
+function validateNumber(phoneNumber) {
+    if (phoneNumber.length == 10 && !isNaN(phoneNumber)) {
+        return true;
+    }
+    return false;
+}
+
+export { generateOTP, validateEmail, validateNumber };
