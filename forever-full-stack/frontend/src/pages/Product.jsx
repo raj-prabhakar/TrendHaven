@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 const Product = () => {
   const { productId } = useParams();
   const { products, currency, addToCart, backendUrl } = useContext(ShopContext);
-  const [productData, setProductData] = useState(false);
+  const [productData, setProductData] = useState(null);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
   const [reviewsOpen, setReviewsOpen] = useState(false);
@@ -19,67 +19,63 @@ const Product = () => {
     text: "",
     _productId: productId,
   });
+  const [loading, setLoading] = useState(false);
 
   const formatDate = (isoString) => {
-    // Create a new Date object from the ISO string
     const date = new Date(isoString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(2);
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
 
-    // Get individual components of the date
-    const day = String(date.getDate()).padStart(2, "0"); // Get day and pad with zero if needed
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
-    const year = String(date.getFullYear()).slice(2); // Get last two digits of the year
-    const hours = String(date.getHours()).padStart(2, "0"); // Get hours
-    const minutes = String(date.getMinutes()).padStart(2, "0"); // Get minutes
-
-    // Format the date as dd/mm/yy and time as hh:mm
-    return `${hours}:${minutes} |  ${day}/${month}/${year}`;
+    return `${hours}:${minutes} | ${day}/${month}/${year}`;
   };
 
-  const fetchProductData = async () => {
-    products.map((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-        setImage(item.image[0]);
-        return null;
-      }
-    });
+  const fetchProductData = () => {
+    const item = products.find((product) => product._id === productId);
+    if (item) {
+      setProductData(item);
+      setImage(item.image[0]);
+    } else {
+      toast.error("Product not found.");
+    }
   };
 
   const getReviews = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(
-        backendUrl + `/api/product/reviews/${productId}`
-      );
-      // if(response.data.reviews.length === 0) toast.success(response.data.message);
+      const response = await axios.get(`${backendUrl}/api/product/reviews/${productId}`);
       setReviews(response.data.reviews);
-      console.log(reviews, "reviews here");
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error("Failed to fetch reviews.");
     } finally {
+      setLoading(false);
       setReviewsOpen(true);
     }
   };
 
-  const onSubmitHandler = async () => {
+  const onSubmitHandler = async (event) => {
     event.preventDefault();
-    if (localStorage.getItem("userId") == null) {
-      toast.error("User Must be Logged In");
-    } else {
-      try {
-        const response = await axios.post(
-          backendUrl + `/api/product/add-review/${productId}`,
-          {
-            userId: currentReview.userId,
-            text: currentReview.text,
-            productId,
-          }
-        );
-        await getReviews();
-      } catch (error) {
-        console.log(error);
-        toast.error(error.message);
-      }
+    if (!currentReview.userId) {
+      toast.error("User must be logged in.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post(`${backendUrl}/api/product/add-review/${productId}`, {
+        userId: currentReview.userId,
+        text: currentReview.text,
+        productId,
+      });
+      await getReviews();
+      setCurrentReview({ ...currentReview, text: "" }); // Clear review input
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to submit review.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,7 +84,11 @@ const Product = () => {
     getReviews();
   }, [productId, products]);
 
-  return productData ? (
+  if (productData === null) {
+    return <div className="w-full h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  return (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
       {/*----------- Product Data-------------- */}
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
@@ -113,14 +113,6 @@ const Product = () => {
         {/* -------- Product Info ---------- */}
         <div className="flex-1">
           <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
-          {/* <div className=' flex items-center gap-1 mt-2'>
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_dull_icon} alt="" className="w-3 5" />
-              <p className='pl-2'>(122)</p>
-          </div> */}
           <p className="mt-5 text-3xl font-medium">
             {currency}
             {productData.price}
@@ -163,20 +155,12 @@ const Product = () => {
       <div className="mt-20">
         <div className="flex">
           <button onClick={() => setReviewsOpen(false)}>
-            <p
-              className={
-                "border px-5 py-3 text-sm " + (!reviewsOpen ? "font-bold" : "")
-              }
-            >
+            <p className={"border px-5 py-3 text-sm " + (!reviewsOpen ? "font-bold" : "")}>
               Description
             </p>
           </button>
-          <button onClick={() => getReviews()}>
-            <p
-              className={
-                "border px-5 py-3 text-sm " + (reviewsOpen ? "font-bold" : "")
-              }
-            >
+          <button onClick={() => setReviewsOpen(true)}>
+            <p className={"border px-5 py-3 text-sm " + (reviewsOpen ? "font-bold" : "")}>
               Reviews ({reviews.length})
             </p>
           </button>
@@ -203,10 +187,7 @@ const Product = () => {
 
         {reviewsOpen && (
           <div>
-            <form
-              onSubmit={onSubmitHandler}
-              // className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800"
-            >
+            <form onSubmit={onSubmitHandler}>
               <input
                 onChange={(e) =>
                   setCurrentReview({ ...currentReview, text: e.target.value })
@@ -219,9 +200,9 @@ const Product = () => {
               />
               <button
                 className="bg-black text-white font-light px-8 py-2 mt-4 ml-5"
-                // disabled={loading}
+                disabled={loading}
               >
-                Post
+                {loading ? "Posting..." : "Post"}
               </button>
             </form>
             {reviews.length !== 0 &&
@@ -251,14 +232,11 @@ const Product = () => {
       </div>
 
       {/* --------- display related products ---------- */}
-
       <RelatedProducts
         category={productData.category}
         subCategory={productData.subCategory}
       />
     </div>
-  ) : (
-    <div className=" opacity-0"></div>
   );
 };
 

@@ -1,58 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 const Loader = () => {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prevProgress) => {
-        if (prevProgress === 100) {
-          return 0;
-        }
-
-        return prevProgress + 1;
-      });
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const strokeDasharray = `${progress} ${100 - progress}`;
-
   return (
     <div
       style={{
-        height: 200,
-        width: 200,
-        position: "absolute",
-        alignSelf: "center",
-        right: "inherit",
-        left: "inherit",
-        top: "inherit",
-        bottom: "inherit",
-        justifySelf: "center",
-        zIndex: 100,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(0.5px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9999,
       }}
     >
-      <svg viewBox="0 0 100 100">
-        <circle
-          cx="50"
-          cy="50"
-          r="45"
-          stroke="#ccc"
-          strokeWidth="10"
-          fill="none"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="45"
-          stroke="#000"
-          strokeWidth="10"
-          fill="#A1A1A1"
-          strokeDasharray={strokeDasharray}
-        />
-      </svg>
+      <h1 style={{ fontSize: "2.5rem", color: "#333" }}>Loading....</h1>
     </div>
   );
 };

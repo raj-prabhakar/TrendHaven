@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Collection from './pages/Collection'
 import About from './pages/About'
@@ -17,10 +17,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import Verify from './pages/Verify'
 
 const App = () => {
+  const location = useLocation();
+
   return (
     <div className='px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'>
       <ToastContainer />
-      <Navbar />
+      {location.pathname !== '/login' && <Navbar />}
       <SearchBar />
       <Routes>
         <Route path='/' element={<Home />} />
@@ -34,9 +36,10 @@ const App = () => {
         <Route path='/orders' element={<Orders />} />
         <Route path='/verify' element={<Verify />} />
       </Routes>
-      <Footer />
+      {/* Conditionally render Footer only if not on the login page */}
+      {location.pathname !== '/login' && <Footer />}
     </div>
   )
 }
 
-export default App
+export default App;
