@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react'
 import {assets} from '../assets/assets'
 import { Link, NavLink } from 'react-router-dom'
 import { ShopContext } from '../context/ShopContext';
+import { toast } from 'react-toastify';
 
 const Navbar = () => {
 
@@ -10,6 +11,7 @@ const Navbar = () => {
     const {setShowSearch , getCartCount , navigate, token, setToken, setCartItems} = useContext(ShopContext);
 
     const logout = () => {
+        toast.success("User logged out successfully");
         navigate('/login')
         localStorage.removeItem('token')
         localStorage.removeItem('userId')

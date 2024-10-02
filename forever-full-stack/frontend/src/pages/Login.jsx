@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import loginPageImage from "../assets/login_page_image.jpg"; // Ensure the correct path and extension
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login");
@@ -16,6 +17,38 @@ const Login = () => {
   const [otpField, setOtpField] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const onSuccess = async (response) => {
+    try {
+      const googleToken = response.credential; // Google OAuth token
+
+      // Send the token to your backend
+      const backendResponse = await axios.post(
+        `${backendUrl}/api/user/google-login`,
+        {
+          token: googleToken,
+        }
+      );
+
+      if (backendResponse.data.success) {
+        setToken(backendResponse.data.token);
+        localStorage.setItem("token", backendResponse.data.token); // Store your app JWT token
+        localStorage.setItem("userId", backendResponse.data.id);
+        toast.success("Google login successful!");
+        navigate("/");
+      } else {
+        toast.error(backendResponse.data.message);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message || "Failed to authenticate with Google");
+      console.error(error);
+    }
+  };
+
+  const onFailure = (error) => {
+    toast.error("Google Login Failed");
+    console.error(error);
+  };
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -118,12 +151,18 @@ const Login = () => {
     }
   };
 
+  // Function to handle Google sign-in
+  const handleGoogleSignIn = () => {
+    // Add the logic to handle Google sign-in here
+    toast.info("Google sign-in not yet implemented");
+  };
+
   return (
     <>
       {loading ? (
         <Loader />
       ) : (
-        <div className="flex flex-col md:flex-row items-center justify-center h-screen w-[90%] sm:max-w-[1200px] mx-auto mt-14">
+        <div className="flex flex-row md:flex-row items-center justify-between h-screen w-[100%] ">
           {/* Left Section (Image) */}
           <div className="flex-1 hidden md:flex justify-center items-center h-full">
             <img
@@ -137,10 +176,10 @@ const Login = () => {
           <div className="hidden md:flex h-full border-l border-gray-400 mx-10"></div>
 
           {/* Right Section (Form) */}
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex justify-center flex-col">
             <form
               onSubmit={onSubmitHandler}
-              className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto gap-4 text-gray-800"
+              className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto gap-4 text-gray-800 mr-10 mb-28"
             >
               <div className="inline-flex items-center gap-2 mb-2 mt-10">
                 <p className="prata-regular text-3xl">{currentState}</p>
@@ -229,7 +268,8 @@ const Login = () => {
                 )}
               </div>
               <button
-                className="bg-black text-white font-light px-8 py-2 mt-4"
+                // className="bg-black text-white font-light px-8 py-2 mt-4"
+                className="w-full bg-black text-white px-3 py-2 font-light mt-2"
                 disabled={loading}
               >
                 {loading
@@ -242,6 +282,24 @@ const Login = () => {
                   ? "Set New Password"
                   : "Sign Up"}
               </button>
+              {/* <button
+                type="button"
+                className="w-full border border-gray-800 px-3 mt-4 flex items-center justify-center gap-1"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+              >
+                <div className="flex flex-row items-center mt-2">
+                  <img
+                    src="https://t4.ftcdn.net/jpg/03/08/54/37/360_F_308543787_DmPo1IELtKY9hG8E8GlW8KHEsRC7JiDN.jpg"
+                    alt="Google"
+                    className="w-11 h-11 mb-1" // Adjust size as needed
+                  />
+                  <p className="prata-regular mb-1">Sign in with Google</p>
+                </div>
+              </button> */}
+              <div className="w-full px-3 mt-6 flex items-center justify-center gap-1">
+                <GoogleLogin onSuccess={onSuccess} onError={onFailure} />
+              </div>
             </form>
           </div>
         </div>
