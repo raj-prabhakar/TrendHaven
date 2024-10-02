@@ -6,6 +6,8 @@ import userModel from "../models/userModel.js";
 import sendEmail from "../utils/sendEmail.js";
 import { generateOTP } from "../utils/otp generation and validation";
 import OTP from "../models/OTP.js";
+import { OAuth2Client } from "google-auth-library";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET);
@@ -27,13 +29,47 @@ const loginUser = async (req, res) => {
     if (isMatch) {
       const token = createToken(user._id);
       const id = user._id;
-      res.json({ success: true, token, id});
+      res.json({ success: true, token, id });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
     }
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
+  }
+};
+
+// Route for Google login
+const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+    });
+
+    const { email, name, picture, sub: googleId } = ticket.getPayload(); // Extract user details from Google token
+
+    // Check if user exists in the database
+    let user = await userModel.findOne({ email });
+
+    if (!user) {
+      // If user doesn't exist, create a new one
+      return res.status(404).json({ success: false, message: "Firstly Sign Up" });
+    }
+
+    // Create a JWT token for your app
+    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h", // Set expiration time if needed
+    });
+
+    // Respond with the token and user ID
+    res.json({ success: true, token: jwtToken, id: user._id });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Google login failed" });
   }
 };
 
@@ -235,7 +271,6 @@ const setNewPassword = async (req, res) => {
   }
 };
 
-
 export {
   loginUser,
   registerUser,
@@ -243,4 +278,5 @@ export {
   sendResetPasswordOtp,
   verifyPassResetOtp,
   setNewPassword,
+  googleLogin,
 };
