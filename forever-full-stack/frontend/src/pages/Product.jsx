@@ -5,6 +5,8 @@ import { assets } from "../assets/assets";
 import RelatedProducts from "../components/RelatedProducts";
 import axios from "axios";
 import { toast } from "react-toastify";
+import Rating from '@mui/material/Rating';  // Import the Rating component
+import Stack from '@mui/material/Stack';    // Import Stack for layout
 
 const Product = () => {
   const { productId } = useParams();
@@ -120,6 +122,12 @@ const Product = () => {
           <p className="mt-5 text-gray-500 md:w-4/5">
             {productData.description}
           </p>
+          {/* --------- Rating Component --------- */}
+          <div className="my-4">
+            <Stack spacing={1}>
+              <Rating name="half-rating" value={productData.rating || 0} precision={0.5} readOnly />
+            </Stack>
+          </div>
           <div className="flex flex-col gap-4 my-8">
             <p>Select Size</p>
             <div className="flex gap-2">

@@ -18,21 +18,19 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Handle Google login success
   const onSuccess = async (response) => {
     try {
-      const googleToken = response.credential; // Google OAuth token
+      const googleToken = response.credential;
 
-      // Send the token to your backend
       const backendResponse = await axios.post(
         `${backendUrl}/api/user/google-login`,
-        {
-          token: googleToken,
-        }
+        { token: googleToken }
       );
 
       if (backendResponse.data.success) {
         setToken(backendResponse.data.token);
-        localStorage.setItem("token", backendResponse.data.token); // Store your app JWT token
+        localStorage.setItem("token", backendResponse.data.token);
         localStorage.setItem("userId", backendResponse.data.id);
         toast.success("Google login successful!");
         navigate("/");
@@ -40,16 +38,14 @@ const Login = () => {
         toast.error(backendResponse.data.message);
       }
     } catch (error) {
-      toast.error(error.response.data.message || "Failed to authenticate with Google");
+      toast.error(
+        error.response.data.message || "Failed to authenticate with Google"
+      );
       console.error(error);
     }
   };
 
-  const onFailure = (error) => {
-    toast.error("Google Login Failed");
-    console.error(error);
-  };
-
+  // Handle form submit
   const onSubmitHandler = async (event) => {
     event.preventDefault();
     if (
@@ -128,6 +124,7 @@ const Login = () => {
     }
   }, [token, navigate]);
 
+  // Handle OTP send
   const handleSendOtp = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -144,17 +141,10 @@ const Login = () => {
         toast.error(response.data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Function to handle Google sign-in
-  const handleGoogleSignIn = () => {
-    // Add the logic to handle Google sign-in here
-    toast.info("Google sign-in not yet implemented");
   };
 
   return (
@@ -162,114 +152,119 @@ const Login = () => {
       {loading ? (
         <Loader />
       ) : (
-        <div className="flex flex-row md:flex-row items-center justify-between h-screen w-[100%] ">
-          {/* Left Section (Image) */}
-          <div className="flex-1 hidden md:flex justify-center items-center h-full">
+        <div className="flex flex-col md:flex-row items-center justify-between h-screen w-full bg-gray-100">
+          {/* Left Section with Image */}
+          <div className="hidden md:flex flex-1 h-full">
             <img
-              src={loginPageImage} // Ensure this is the correct path to your image
-              alt="Fashion Image"
-              className="w-full h-full object-cover"
+              src={loginPageImage}
+              alt="Fashion"
+              className="w-full h-full object-cover shadow-xl"
             />
           </div>
 
-          {/* Divider */}
-          <div className="hidden md:flex h-full border-l border-gray-400 mx-10"></div>
-
-          {/* Right Section (Form) */}
-          <div className="flex-1 flex justify-center flex-col">
+          {/* Form Section */}
+          <div className="flex-1 flex justify-center items-center bg-white shadow-lg p-8">
             <form
               onSubmit={onSubmitHandler}
-              className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto gap-4 text-gray-800 mr-10 mb-28"
+              className="flex flex-col items-center w-full max-w-sm gap-6"
             >
-              <div className="inline-flex items-center gap-2 mb-2 mt-10">
-                <p className="prata-regular text-3xl">{currentState}</p>
-                <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
-              </div>
+              <h2 className="text-3xl font-semibold text-gray-700">
+                {currentState}
+              </h2>
+
               {currentState === "Sign Up" && (
                 <input
                   onChange={(e) => setName(e.target.value)}
                   value={name}
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-800"
                   placeholder="Name"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                   disabled={loading}
                 />
               )}
+
               <input
                 onChange={(e) => setEmail(e.target.value)}
                 value={email}
                 type="email"
-                className="w-full px-3 py-2 border border-gray-800"
                 placeholder="Email"
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
                 disabled={loading}
               />
+
               {(!otpField || currentState === "Enter new password") && (
                 <input
                   onChange={(e) => setPassword(e.target.value)}
                   value={password}
                   type="password"
-                  className="w-full px-3 py-2 border border-gray-800"
                   placeholder={
                     currentState === "Enter new password"
                       ? currentState
-                      : "Enter Password"
+                      : "Password"
                   }
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                   disabled={loading}
                 />
               )}
-              {(currentState === "Sign Up" ||
-                currentState === "Enter new password") && (
+
+              {currentState === "Sign Up" ||
+              currentState === "Enter new password" ? (
                 <input
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   value={confirmPassword}
                   type="password"
-                  className="w-full px-3 py-2 border border-gray-800"
                   placeholder="Confirm Password"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                   disabled={loading}
                 />
-              )}
+              ) : null}
+
               {currentState === "Reset Password" && (
                 <input
                   onChange={(e) => setOtp(e.target.value)}
                   value={otp}
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-800"
                   placeholder="Enter OTP"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                   disabled={loading}
                 />
               )}
-              <div className="w-full flex justify-between text-sm mt-[-8px]">
+
+              <div className="flex justify-between w-full text-sm">
                 <button
                   type="button"
                   onClick={handleSendOtp}
                   disabled={loading}
                 >
-                  <p className="cursor-pointer">Forgot your password?</p>
+                  <span className="text-indigo-600 hover:underline">
+                    Forgot password?
+                  </span>
                 </button>
+
                 {currentState === "Login" ? (
                   <p
                     onClick={() => setCurrentState("Sign Up")}
-                    className="cursor-pointer"
+                    className="text-indigo-600 hover:underline cursor-pointer"
                   >
                     Create account
                   </p>
                 ) : (
                   <p
                     onClick={() => setCurrentState("Login")}
-                    className="cursor-pointer"
+                    className="text-indigo-600 hover:underline cursor-pointer"
                   >
-                    Login Here
+                    Login here
                   </p>
                 )}
               </div>
+
               <button
-                // className="bg-black text-white font-light px-8 py-2 mt-4"
-                className="w-full bg-black text-white px-3 py-2 font-light mt-2"
+                className="w-full p-3 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 disabled={loading}
               >
                 {loading
@@ -282,23 +277,13 @@ const Login = () => {
                   ? "Set New Password"
                   : "Sign Up"}
               </button>
-              {/* <button
-                type="button"
-                className="w-full border border-gray-800 px-3 mt-4 flex items-center justify-center gap-1"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-              >
-                <div className="flex flex-row items-center mt-2">
-                  <img
-                    src="https://t4.ftcdn.net/jpg/03/08/54/37/360_F_308543787_DmPo1IELtKY9hG8E8GlW8KHEsRC7JiDN.jpg"
-                    alt="Google"
-                    className="w-11 h-11 mb-1" // Adjust size as needed
-                  />
-                  <p className="prata-regular mb-1">Sign in with Google</p>
-                </div>
-              </button> */}
-              <div className="w-full px-3 mt-6 flex items-center justify-center gap-1">
-                <GoogleLogin onSuccess={onSuccess} onError={onFailure} />
+
+              {/* Google Login */}
+              <div className="w-full mt-4">
+                <GoogleLogin
+                  onSuccess={onSuccess}
+                  onError={() => toast.error("Google login failed")}
+                />
               </div>
             </form>
           </div>
