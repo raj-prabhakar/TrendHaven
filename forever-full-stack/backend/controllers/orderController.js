@@ -2,6 +2,7 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import Stripe from 'stripe'
 import razorpay from 'razorpay'
+import productModel from "../models/productModel.js";
 
 // global variables
 const currency = 'inr'
@@ -202,19 +203,45 @@ const allOrders = async (req,res) => {
 }
 
 // User Order Data For Forntend
-const userOrders = async (req,res) => {
+const userOrders = async (req, res) => {
     try {
-        
-        const { userId } = req.body
-
-        const orders = await orderModel.find({ userId })
-        res.json({success:true,orders})
-
+      const { userId } = req.body;
+  
+      // Fetch user's orders
+      const orders = await orderModel.find({ userId });
+      const user = await userModel.findOne({ _id: userId });
+      const email = user.email;
+  
+      // Loop through orders and retrieve product details
+      const ordersWithProductNames = await Promise.all(
+        orders.map(async (order) => {
+          const itemsWithNames = await Promise.all(
+            order.items.map(async (item) => {
+              const product = await productModel.findById(item.productId);
+              return {
+                ...item,
+                productName: product ? product.name : 'Unknown Product',
+              };
+            })
+          );
+  
+          return {
+            ...order._doc, // Copy order document
+            items: itemsWithNames, // Add the modified items array with product names
+          };
+        })
+      );
+  
+      res.json({
+        success: true,
+        orders: ordersWithProductNames,
+        email,
+      });
     } catch (error) {
-        console.log(error)
-        res.json({success:false,message:error.message})
+      console.log(error);
+      res.json({ success: false, message: error.message });
     }
-}
+  };
 
 // update order status from Admin Panel
 const updateStatus = async (req,res) => {

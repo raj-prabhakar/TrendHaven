@@ -4,6 +4,7 @@ import { assets } from "../assets/assets";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 import Slider from "@mui/material/Slider";
+import Rating from "@mui/material/Rating"; // Import Rating from Material-UI
 
 const Collection = () => {
   const { products, search, showSearch, currency } = useContext(ShopContext);
@@ -13,6 +14,7 @@ const Collection = () => {
   const [subCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState("relavent");
   const [price, setPrice] = useState([0, 100]); // Example initial value
+  const [rating, setRating] = useState(0); // State for rating filter
 
   const toggleCategory = (e) => {
     if (category.includes(e.target.value)) {
@@ -56,7 +58,27 @@ const Collection = () => {
       (item) => item.price >= price[0] && item.price <= price[1]
     );
 
+    // Rating Filter
+    if (rating > 0) {
+      productsCopy = productsCopy.filter((item) => item.rating >= rating);
+    }
+
     setFilterProducts(productsCopy);
+  };
+
+  // Retrieve filters from localStorage if available
+  useEffect(() => {
+    setFilterProducts(products);
+  }, []);
+
+  // Function to reset filters
+  const resetFilters = () => {
+    setCategory([]);
+    setSubCategory([]);
+    setPrice([0, 100]); // Reset price to default range
+    setRating(0); // Reset rating
+    setFilterProducts(products);
+    setSortType("relavent");
   };
 
   const sortProduct = () => {
@@ -71,19 +93,27 @@ const Collection = () => {
         setFilterProducts(fpCopy.sort((a, b) => b.price - a.price));
         break;
 
+      case "ratings":
+        setFilterProducts(fpCopy.sort((a, b) => b.rating - a.rating));
+        break;
+
       default:
         applyFilter();
         break;
     }
   };
 
-  useEffect(() => {
-    applyFilter();
-  }, [category, subCategory, search, showSearch, products, price]);
+  // useEffect(() => {
+  //   applyFilter();
+  // }, [category, subCategory, search, showSearch, products, price, rating]);
 
   useEffect(() => {
     sortProduct();
   }, [sortType]);
+
+  useEffect(() => {
+    applyFilter();
+  }, [search]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
@@ -133,7 +163,7 @@ const Collection = () => {
                 value={"Kids"}
                 onChange={toggleCategory}
               />{" "}
-              kids
+              Kids
             </p>
           </div>
         </div>
@@ -183,19 +213,51 @@ const Collection = () => {
           } sm:block`}
         >
           <p className="mb-3 text-sm font-medium">PRICE</p>
-          <div className="card flex items-center w-[200px]">
-            <label className="mr-2">{`0 ${currency}`}</label>
+          <div className="flex items-center w-[200px]">
+            <label className="mr-2 font-semibold">{`${price[0]} ${currency}`}</label>
             <Slider
               value={price}
               onChange={(e, newValue) => setPrice(newValue)}
-              valueLabelDisplay="auto"
+              valueLabelDisplay="off" // Disable the default value label
               aria-labelledby="range-slider"
               min={0}
               max={100}
               className="flex-1 mx-2" // Adjust the width and margins as needed
             />
-            <label className="ml-2">{`${100} ${currency}`}</label>
+            <label className="ml-2 font-semibold">{`${price[1]} ${currency}`}</label>
           </div>
+        </div>
+
+        {/* Rating Filter */}
+        <div
+          className={`border border-gray-300 pl-5 py-3 my-5 ${
+            showFilter ? "" : "hidden"
+          } sm:block`}
+        >
+          <p className="mb-3 text-sm font-medium">RATING Above</p>
+          <Rating
+            name="simple-controlled"
+            value={rating}
+            onChange={(event, newValue) => {
+              setRating(newValue);
+            }}
+          />
+        </div>
+
+        {/* Reset Filter Button */}
+        <div className="my-5 flex flex-row mt-2">
+          <button
+            onClick={applyFilter}
+            className="bg-black text-white py-2 px-4 mr-2 rounded"
+          >
+            Apply Filters
+          </button>
+          <button
+            onClick={resetFilters}
+            className="bg-black text-white py-2 px-4 rounded"
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
 
@@ -203,14 +265,16 @@ const Collection = () => {
       <div className="flex-1">
         <div className="flex justify-between text-base sm:text-2xl mb-4">
           <Title text1={"ALL"} text2={"COLLECTIONS"} />
-          {/* Porduct Sort */}
+          {/* Product Sort */}
           <select
             onChange={(e) => setSortType(e.target.value)}
             className="border-2 border-gray-300 text-sm px-2"
+            defaultValue="relevant"
           >
-            <option value="relavent">Sort by: Relavent</option>
-            <option value="low-high">Sort by: Low to High</option>
-            <option value="high-low">Sort by: High to Low</option>
+            <option value="relavent">Sort by: Relevant</option>
+            <option value="low-high">Sort by Price: Low to High</option>
+            <option value="high-low">Sort by Price: High to Low</option>
+            <option value="ratings">Sort by Ratings</option>
           </select>
         </div>
 
@@ -223,6 +287,7 @@ const Collection = () => {
               id={item._id}
               price={item.price}
               image={item.image}
+              rating={item.rating} // Pass rating to ProductItem
             />
           ))}
         </div>

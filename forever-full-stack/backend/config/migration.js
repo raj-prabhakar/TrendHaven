@@ -1,18 +1,15 @@
 import mongoose from "mongoose";
-// import dotenv from 'dotenv'; // Import dotenv
 import productModel from "../models/productModel.js"; // Adjust the path according to your file structure
-// import connectDB from './mongodb.js';
-import 'dotenv/config'
+import reviewModel from "../models/reviewModel.js";
 
-// Load environment variables from .env file
-// dotenv.config(); // Call dotenv.config() to load environment variables
+import "dotenv/config";
 
-// Check if MONGODB_URI is being fetched correctly
-// console.log(process.env.MONGODB_URI, "hereeeeeeeeeeee");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb+srv://raj:2WgEu5EaScsvCUA5@forever-backend.rtoqd.mongodb.net/?retryWrites=true&w=majority&appName=Forever-Backend');
+    await mongoose.connect(
+      "mongodb+srv://raj:2WgEu5EaScsvCUA5@forever-backend.rtoqd.mongodb.net/?retryWrites=true&w=majority&appName=Forever-Backend"
+    );
     console.log("DB Connected");
   } catch (error) {
     console.error("DB Connection Error:", error);
@@ -22,20 +19,36 @@ const connectDB = async () => {
 // Migration function to ensure all products have a rating
 const migrateProducts = async () => {
   try {
-    const products = await productModel.find(); // Fetch all products
-    // Iterate over each product and check/update the rating
-    for (const product of products) {
-      // Check if the rating field exists
-      if (!product.rating) {
-        product.rating = 0; // Set the default rating if it doesn't exist
-        await product.save(); // Save the updated product document back to the database
-        console.log(`Updated Product ID: ${product._id} with default rating of 0`);
-      }
-    }
+    // 1. Update all products that don't have `rating` and `numberOfReviews`
+    await productModel.updateMany(
+      {
+        $or: [
+          { rating: { $exists: false } },
+          { numberOfReviews: { $exists: false } },
+        ],
+      },
+      { $set: { rating: 0, numberOfReviews: 0 } }
+    );
+    console.log("Products rating and numberOfReviews migration completed.");
 
-    console.log("Product migration for rating completed successfully.");
+    // 2. Update all reviews that don't have `rating`
+    await reviewModel.updateMany(
+      { rating: { $exists: false } },
+      { $set: { rating: 0 } }
+    );
+    console.log("Reviews rating migration completed.");
+
+    // Optional: If you want to verify the changes, you can query and log updated documents
+    const updatedProducts = await productModel.find({
+      rating: 0,
+      numberOfReviews: 0,
+    });
+    const updatedReviews = await reviewModel.find({ rating: 0 });
+
+    console.log(`Updated Products:`, updatedProducts.length);
+    console.log(`Updated Reviews:`, updatedReviews.length);
   } catch (error) {
-    console.error("Migration error:", error);
+    console.error("Error in migration:", error);
   }
 };
 

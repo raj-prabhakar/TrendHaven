@@ -264,7 +264,7 @@ const setNewPassword = async (req, res) => {
     await sendEmail(email, 1, user.name, 3);
 
     // Respond with success
-    res.json({ success: true, token });
+    res.json({ success: true, token, id : user._id });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });

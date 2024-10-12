@@ -5,8 +5,8 @@ import { assets } from "../assets/assets";
 import RelatedProducts from "../components/RelatedProducts";
 import axios from "axios";
 import { toast } from "react-toastify";
-import Rating from '@mui/material/Rating';  // Import the Rating component
-import Stack from '@mui/material/Stack';    // Import Stack for layout
+import Rating from "@mui/material/Rating"; // Import the Rating component
+import Stack from "@mui/material/Stack"; // Import Stack for layout
 
 const Product = () => {
   const { productId } = useParams();
@@ -20,6 +20,7 @@ const Product = () => {
     userId: localStorage.getItem("userId") || null,
     text: "",
     _productId: productId,
+    rating: 0.0,
   });
   const [loading, setLoading] = useState(false);
 
@@ -28,10 +29,17 @@ const Product = () => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = String(date.getFullYear()).slice(2);
-    const hours = String(date.getHours()).padStart(2, "0");
+
+    let hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, "0");
 
-    return `${hours}:${minutes} | ${day}/${month}/${year}`;
+    // Determine AM or PM suffix
+    const ampm = hours >= 12 ? "PM" : "AM";
+    // Convert hours from 24-hour to 12-hour format
+    hours = hours % 12;
+    hours = hours ? String(hours).padStart(2, "0") : "12"; // The hour '0' should be '12'
+
+    return `${hours}:${minutes} ${ampm} | ${day}/${month}/${year}`;
   };
 
   const fetchProductData = () => {
@@ -39,15 +47,15 @@ const Product = () => {
     if (item) {
       setProductData(item);
       setImage(item.image[0]);
-    } else {
-      toast.error("Product not found.");
     }
   };
 
   const getReviews = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${backendUrl}/api/product/reviews/${productId}`);
+      const response = await axios.get(
+        `${backendUrl}/api/product/reviews/${productId}`
+      );
       setReviews(response.data.reviews);
     } catch (error) {
       console.log(error);
@@ -70,6 +78,7 @@ const Product = () => {
         userId: currentReview.userId,
         text: currentReview.text,
         productId,
+        rating: currentReview.rating,
       });
       await getReviews();
       setCurrentReview({ ...currentReview, text: "" }); // Clear review input
@@ -78,6 +87,7 @@ const Product = () => {
       toast.error("Failed to submit review.");
     } finally {
       setLoading(false);
+      window.location.reload(); 
     }
   };
 
@@ -87,7 +97,11 @@ const Product = () => {
   }, [productId, products]);
 
   if (productData === null) {
-    return <div className="w-full h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -125,7 +139,12 @@ const Product = () => {
           {/* --------- Rating Component --------- */}
           <div className="my-4">
             <Stack spacing={1}>
-              <Rating name="half-rating" value={productData.rating || 0} precision={0.5} readOnly />
+              <Rating
+                name="half-rating"
+                value={productData.rating || 0}
+                precision={0.5}
+                readOnly
+              />
             </Stack>
           </div>
           <div className="flex flex-col gap-4 my-8">
@@ -163,12 +182,20 @@ const Product = () => {
       <div className="mt-20">
         <div className="flex">
           <button onClick={() => setReviewsOpen(false)}>
-            <p className={"border px-5 py-3 text-sm " + (!reviewsOpen ? "font-bold" : "")}>
+            <p
+              className={
+                "border px-5 py-3 text-sm " + (!reviewsOpen ? "font-bold" : "")
+              }
+            >
               Description
             </p>
           </button>
           <button onClick={() => setReviewsOpen(true)}>
-            <p className={"border px-5 py-3 text-sm " + (reviewsOpen ? "font-bold" : "")}>
+            <p
+              className={
+                "border px-5 py-3 text-sm " + (reviewsOpen ? "font-bold" : "")
+              }
+            >
               Reviews ({reviews.length})
             </p>
           </button>
@@ -195,7 +222,10 @@ const Product = () => {
 
         {reviewsOpen && (
           <div>
-            <form onSubmit={onSubmitHandler}>
+            <form
+              onSubmit={onSubmitHandler}
+              className="flex flex-row justify-start py-2"
+            >
               <input
                 onChange={(e) =>
                   setCurrentReview({ ...currentReview, text: e.target.value })
@@ -206,12 +236,30 @@ const Product = () => {
                 placeholder="Write review here..."
                 required
               />
-              <button
-                className="bg-black text-white font-light px-8 py-2 mt-4 ml-5"
-                disabled={loading}
-              >
-                {loading ? "Posting..." : "Post"}
-              </button>
+              <div className="flex flex-col px-6 justify-center border border-gray-800 ml-4">
+                <p className="text-center mb-2">Give Rating</p>
+                <Stack spacing={1}>
+                  <Rating
+                    name="half-rating"
+                    onChange={(e) =>
+                      setCurrentReview({
+                        ...currentReview,
+                        rating: e.target.value,
+                      })
+                    }
+                    defaultValue={0.0}
+                    precision={0.5}
+                  />
+                </Stack>
+              </div>
+              <div className="mb-2 mt-2">
+                <button
+                  className="bg-black text-white font-light px-8 py-2 mt-4 ml-5"
+                  disabled={loading}
+                >
+                  {loading ? "Posting..." : "Post"}
+                </button>
+              </div>
             </form>
             {reviews.length !== 0 &&
               reviews.map((item, index) => (
@@ -220,8 +268,18 @@ const Product = () => {
                   className="border rounded-lg p-4 mb-4 mt-4 shadow-sm bg-white"
                 >
                   {/* Review Text */}
-                  <div className="text-gray-800 text-lg leading-relaxed mb-2">
+                  <div className="flex flex-row justify-between text-gray-800 text-lg leading-relaxed mb-2">
                     {item.text}
+                    <div>
+                      <Stack spacing={1}>
+                        <Rating
+                          name="half-rating"
+                          defaultValue={item.rating}
+                          precision={0.5}
+                          readOnly
+                        />
+                      </Stack>
+                    </div>
                   </div>
 
                   {/* Reviewer's Name and Date */}

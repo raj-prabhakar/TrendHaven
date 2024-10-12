@@ -5,6 +5,7 @@ const reviewSchema = new mongoose.Schema({
   text: { type: String, required: true }, // Review text
   dateCreated: { type: Date, default: Date.now }, // Date the review was created
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'product', required: true }, // Reference to the Product
+  rating : {type: Number, default : 0.0},
 });
 
 const reviewModel = mongoose.models.review || mongoose.model("review", reviewSchema);

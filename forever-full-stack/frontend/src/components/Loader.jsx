@@ -1,25 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
+import ClipLoader from "react-spinners/ClipLoader";
 
-const Loader = () => {
+const override = {
+  display: "block",
+  margin: "0 auto",
+  borderColor: "black",
+};
+
+const App = () => {
+  const [loading, setLoading] = useState(true);
+  const [color, setColor] = useState("#ffffff");
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
-        backdropFilter: "blur(0.5px)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 9999,
-      }}
-    >
-      <h1 style={{ fontSize: "2.5rem", color: "#333" }}>Loading....</h1>
+    <div className="sweet-loading flex justify-center items-center min-h-screen">
+      <ClipLoader
+        color={color}
+        loading={loading}
+        cssOverride={override}
+        size={150}
+        aria-label="Loading Spinner"
+        data-testid="loader"
+      />
     </div>
   );
 };
 
-export default Loader;
+export default App;

@@ -37,13 +37,16 @@ const getReviewsOfAPArticularProduct = async (req, res) => {
 };
 
 const addCommentToProduct = async (req, res) => {
-  const { userId, text, productId } = req.body; // Get userId, text, and productId from the request body
+  const { userId, text, productId, rating } = req.body;
 
-  console.log(userId, text, productId);
+  console.log(userId, text, productId, rating);
 
   try {
-    // Check if the product exists
-    const product = await productModel.findById(productId);
+    // Check if the product exists and populate its reviews with full review data
+    const product = await productModel.findById(productId).populate({
+      path: 'reviews',
+      model: 'review',
+    });
     if (!product) {
       return res
         .status(404)
@@ -58,29 +61,54 @@ const addCommentToProduct = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
+    let Rating = parseFloat(rating);
+
     // Create a new review
     const newReview = new reviewModel({
       userId,
       text,
       productId,
+      rating: Rating, // Make sure to store the rating as a number
     });
 
-    // Save the review to the database
+    // Save the new review to the database
     const savedReview = await newReview.save();
 
+    // Add the new review reference to the product's reviews array
+    product.reviews.push(savedReview._id);
+
+    // Increment the number of reviews for the product
+    product.numberOfReviews = product.reviews.length;
+
+    // Calculate the new average rating for the product, including the new review
+    let totalRating = 0.0;
+
+    // Fetch all existing reviews including the new one and calculate cumulative rating
+    for (let review of product.reviews) {
+      const fetchedReview = await reviewModel.findById(review); // Fetch each review by ID
+      totalRating += parseFloat(fetchedReview.rating); // Accumulate ratings
+    }
+
+    console.log(totalRating, product.numberOfReviews);
+
+    product.rating = totalRating / product.numberOfReviews; // New average rating
+
+    // Save the updated product details
+    await product.save();
+
     // Return the saved review
-    return res
-      .status(201)
-      .json({
-        success: true,
-        message: "Comment added successfully",
-        review: savedReview,
-      });
+    return res.status(201).json({
+      success: true,
+      message: "Review added successfully",
+      review: savedReview,
+    });
   } catch (error) {
-    console.error("Error adding comment:", error);
+    console.error("Error adding review:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 
 const addProduct = async (req, res) => {
   try {
@@ -176,5 +204,5 @@ export {
   removeProduct,
   singleProduct,
   getReviewsOfAPArticularProduct,
-  addCommentToProduct
+  addCommentToProduct,
 };
