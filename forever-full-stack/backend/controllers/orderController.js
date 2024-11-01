@@ -72,7 +72,7 @@ const placeOrder = async (req, res) => {
   try {
     const { userId, items, amount, address } = req.body;
 
-    // console.log(userId, items, amount, address);
+    console.log(userId, items, amount, address);
 
     const orderData = {
       userId,
