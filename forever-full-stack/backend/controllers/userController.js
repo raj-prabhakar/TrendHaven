@@ -39,6 +39,18 @@ const loginUser = async (req, res) => {
   }
 };
 
+const getUserData = async (req, res) => {
+  const { userId } = req.params;
+  if (!userId) {
+    return res.status(404).json({ success: false, message: "Invalid user id" });
+  }
+  const user = await userModel.findOne({ _id: userId });
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+  return res.status(200).json({ success: true, user });
+};
+
 // Route for Google login
 const googleLogin = async (req, res) => {
   try {
@@ -57,7 +69,9 @@ const googleLogin = async (req, res) => {
 
     if (!user) {
       // If user doesn't exist, create a new one
-      return res.status(404).json({ success: false, message: "Firstly Sign Up" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Firstly Sign Up" });
     }
 
     // Create a JWT token for your app
@@ -264,7 +278,7 @@ const setNewPassword = async (req, res) => {
     await sendEmail(email, 1, user.name, 3);
 
     // Respond with success
-    res.json({ success: true, token, id : user._id });
+    res.json({ success: true, token, id: user._id });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -279,4 +293,5 @@ export {
   verifyPassResetOtp,
   setNewPassword,
   googleLogin,
+  getUserData
 };

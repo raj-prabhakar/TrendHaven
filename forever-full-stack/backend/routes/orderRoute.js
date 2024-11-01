@@ -1,7 +1,11 @@
 import express from 'express'
-import {placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, verifyStripe, verifyRazorpay} from '../controllers/orderController.js'
+import {placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, verifyStripe, verifyRazorpay, sendEmailWithOrderInvoice} from '../controllers/orderController.js'
 import adminAuth  from '../middleware/adminAuth.js'
 import authUser from '../middleware/auth.js'
+import multer from 'multer';
+
+// Multer config to handle file uploads
+const upload = multer({ dest: 'uploads/' });
 
 const orderRouter = express.Router()
 
@@ -20,5 +24,8 @@ orderRouter.post('/userorders',authUser,userOrders)
 // verify payment
 orderRouter.post('/verifyStripe',authUser, verifyStripe)
 orderRouter.post('/verifyRazorpay',authUser, verifyRazorpay)
+
+// send invoice pdf after an order
+orderRouter.post('/send-invoice',upload.single('file'),sendEmailWithOrderInvoice)
 
 export default orderRouter
