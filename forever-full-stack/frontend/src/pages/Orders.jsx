@@ -2,19 +2,21 @@ import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import axios from "axios";
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { toast } from "react-toastify";
+import Loader from "../components/Loader";
 
 const Orders = () => {
   const { backendUrl, token, currency } = useContext(ShopContext);
 
   const [orderData, setorderData] = useState([]);
   const [userEmail, setUserEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [invoiceData, setInvoiceData] = useState({
     company: "Forever",
-    address:
-      `Ground Floor, Tower A, TechPark Business Center Electronic City Phase 1, 
+    address: `Ground Floor, Tower A, TechPark Business Center Electronic City Phase 1, 
     Hosur Road Bengaluru, Karnataka - 560100 India`,
     customer: {
       name: "John Doe",
@@ -30,11 +32,11 @@ const Orders = () => {
   });
 
   const InvoiceGenerator = (newItem) => {
-    console.log(newItem, "current item here")
+    console.log(newItem, "current item here");
     const updatedItems = [
       ...invoiceData.items,
       {
-        description: "Women Jacket",
+        description: newItem.productName,
         quantity: newItem.quantity,
         price: newItem.price,
       },
@@ -58,7 +60,23 @@ const Orders = () => {
     }));
   };
 
-  const generateInvoicePDF = (item) => {
+  // Send the PDF to the backend
+  const uploadPDF = (pdfBlob) => {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("file", pdfBlob, "invoice.pdf");
+    formData.append("email", userEmail); // Attach user's email if necessary
+
+    axios
+      .post(`${backendUrl}/api/order/send-invoice`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((response) => toast.success("PDF sent successfully to email"))
+      .catch((error) => toast.error("Error sending PDF to email"));
+    setLoading(false);
+  };
+
+  const generateInvoicePDF = async (item) => {
     InvoiceGenerator(item);
     const doc = new jsPDF();
 
@@ -84,7 +102,8 @@ const Orders = () => {
 
     const itemData = [
       // item.description,
-      "Women Jacket",
+      // "Women Jacket",
+      item.productName,
       item.quantity.toString(),
       `$${item.price.toFixed(2)}`,
     ];
@@ -106,6 +125,12 @@ const Orders = () => {
 
     // Save the PDF
     doc.save("invoice.pdf");
+
+    // Convert to Blob
+    const pdfBlob = doc.output("blob");
+
+    // Send to backend
+    uploadPDF(pdfBlob);
   };
 
   const loadOrderData = async () => {
@@ -135,6 +160,7 @@ const Orders = () => {
             ] = `${order.address.firstName} ${order.address.lastName}`;
             item["zipcode"] = order.zipcode;
             item["phone"] = order.phone;
+            // item["productName"] = order.productName;
             allOrdersItem.push(item);
           });
         });
@@ -148,67 +174,71 @@ const Orders = () => {
   }, [token]);
 
   return (
-    <div className="border-t pt-16">
-      <div className="text-2xl">
-        <Title text1={"MY"} text2={"ORDERS"} />
-      </div>
+    <>
+      {loading && <Loader />}
 
-      <div>
-        {orderData.map((item, index) => (
-          <div
-            key={index}
-            className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-          >
-            <div className="flex items-start gap-6 text-sm">
-              <img className="w-16 sm:w-20" src={item.image[0]} alt="" />
-              <div>
-                <p className="sm:text-base font-medium">{item.name}</p>
-                <div className="flex items-center gap-3 mt-1 text-base text-gray-700">
-                  <p>
-                    {currency}
-                    {item.price}
+      <div className="border-t pt-16">
+        <div className="text-2xl">
+          <Title text1={"MY"} text2={"ORDERS"} />
+        </div>
+
+        <div>
+          {orderData.map((item, index) => (
+            <div
+              key={index}
+              className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+            >
+              <div className="flex items-start gap-6 text-sm">
+                <img className="w-16 sm:w-20" src={item.image[0]} alt="" />
+                <div>
+                  <p className="sm:text-base font-medium">{item.name}</p>
+                  <div className="flex items-center gap-3 mt-1 text-base text-gray-700">
+                    <p>
+                      {currency}
+                      {item.price}
+                    </p>
+                    <p>Quantity: {item.quantity}</p>
+                    <p>Size: {item.size}</p>
+                  </div>
+                  <p className="mt-1">
+                    Date:{" "}
+                    <span className=" text-gray-400">
+                      {new Date(item.date).toDateString()}
+                    </span>
                   </p>
-                  <p>Quantity: {item.quantity}</p>
-                  <p>Size: {item.size}</p>
+                  <p className="mt-1">
+                    Payment:{" "}
+                    <span className=" text-gray-400">{item.paymentMethod}</span>
+                  </p>
                 </div>
-                <p className="mt-1">
-                  Date:{" "}
-                  <span className=" text-gray-400">
-                    {new Date(item.date).toDateString()}
-                  </span>
-                </p>
-                <p className="mt-1">
-                  Payment:{" "}
-                  <span className=" text-gray-400">{item.paymentMethod}</span>
-                </p>
+              </div>
+              <div className="md:w-1/2 flex justify-between">
+                <div className="flex items-center gap-2">
+                  <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
+                  <p className="text-sm md:text-base">{item.status}</p>
+                </div>
+                {item.status !== "Delivered" && (
+                  <button
+                    onClick={loadOrderData}
+                    className="border px-4 py-2 text-sm font-medium rounded-sm"
+                  >
+                    Track Order
+                  </button>
+                )}
+                {item.status === "Delivered" && (
+                  <button
+                    onClick={() => generateInvoicePDF(item)}
+                    className="border px-4 py-2 text-sm font-medium rounded-sm"
+                  >
+                    Download Invoice
+                  </button>
+                )}
               </div>
             </div>
-            <div className="md:w-1/2 flex justify-between">
-              <div className="flex items-center gap-2">
-                <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
-                <p className="text-sm md:text-base">{item.status}</p>
-              </div>
-              {item.status !== "Delivered" && (
-                <button
-                  onClick={loadOrderData}
-                  className="border px-4 py-2 text-sm font-medium rounded-sm"
-                >
-                  Track Order
-                </button>
-              )}
-              {item.status === "Delivered" && (
-                <button
-                  onClick={() => generateInvoicePDF(item)}
-                  className="border px-4 py-2 text-sm font-medium rounded-sm"
-                >
-                  Download Invoice
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -12,9 +12,11 @@ import Orders from "./pages/Orders";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SearchBar from "./components/SearchBar";
+import PaymentComponent from './pages/PaymentButton';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Verify from "./pages/Verify";
+import PaymentSuccess from "./pages/paymentSuccess";
 
 const App = () => {
   const location = useLocation();
@@ -41,6 +43,8 @@ const App = () => {
             <Route path="/place-order" element={<PlaceOrder />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/verify" element={<Verify />} />
+            <Route path="/paymentbutton" element={<PaymentComponent />} />
+            <Route path="/paymentsuccess" element={<PaymentSuccess />} />
           </Routes>
           {/* Conditionally render Footer only if not on the login page */}
           {location.pathname !== "/login" && <Footer />}

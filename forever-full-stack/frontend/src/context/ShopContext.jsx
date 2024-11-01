@@ -2,6 +2,8 @@ import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 export const ShopContext = createContext();
 
@@ -14,8 +16,88 @@ const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
-  const [userId, setUserId] = useState(-1);
+  const [order_Data, set_OrderData] = useState({
+    address : '',
+    items : [],
+    amount : 0
+  });
   const navigate = useNavigate();
+
+  const generateInvoicePDF = async (orderData) => {
+    const { items, address } = orderData;
+    const userName = `${address.firstName} ${address.lastName}`;
+    const fullAddress = `${address.street}, ${address.city}, ${address.state} - ${address.zipcode}, ${address.country}`;
+    const email = address.email;
+
+    const doc = new jsPDF();
+
+    // Set company information
+    doc.setFontSize(22);
+    doc.text("Forever", 20, 20);
+    doc.setFontSize(12);
+    doc.text(
+      `Ground Floor, Tower A, TechPark Business Center, Electronic City Phase 1, 
+      Hosur Road, Bengaluru, Karnataka - 560100, India`,
+      20,
+      30
+    );
+
+    // Set customer information
+    doc.text(`Invoice To:`, 20, 50);
+    doc.text(`Name: ${userName}`, 20, 60);
+    doc.text(`Email: ${email}`, 20, 70);
+    doc.text(`Address: ${fullAddress}`, 20, 80);
+
+    // Add a line break before table
+    doc.setLineWidth(0.5);
+    doc.line(20, 90, 190, 90);
+
+    // Prepare table with item data
+    const tableColumn = ["Description", "Quantity", "Price"];
+    const tableRows = [];
+
+    items.forEach((item) => {
+      const itemData = [
+        item.name,
+        item.quantity.toString(),
+        `$${item.price.toFixed(2)}`,
+      ];
+      tableRows.push(itemData);
+    });
+
+    // Adding table using autoTable
+    doc.autoTable({
+      startY: 100,
+      head: [tableColumn],
+      body: tableRows,
+    });
+
+    // Add total at the bottom
+    const totalPrice = getCartAmount() + delivery_fee;
+    doc.text(
+      `Total: $${totalPrice.toFixed(2)}`,
+      160,
+      doc.lastAutoTable.finalY + 20
+    );
+
+    // Save the PDF to blob
+    const pdfBlob = doc.output("blob");
+
+    // Send the PDF to the backend
+    const formData = new FormData();
+    formData.append("file", pdfBlob, "invoice.pdf");
+    formData.append("email", email); // Attach user's email if necessary
+
+    try {
+      await axios.post(`${backendUrl}/api/order/send-invoice`, formData, {
+        headers: { "Content-Type": "multipart/form-data", token },
+      });
+      toast.success("PDF sent successfully to email");
+    } catch (error) {
+      console.error("Error sending PDF to email:", error);
+      toast.error("Error sending PDF to email");
+    }
+  };
 
   const addToCart = async (itemId, size) => {
     if (!size) {
@@ -171,7 +253,10 @@ const ShopContextProvider = (props) => {
     navigate,
     backendUrl,
     setToken,
+    order_Data,
+    set_OrderData,
     token,
+    generateInvoicePDF
   };
 
   return (
