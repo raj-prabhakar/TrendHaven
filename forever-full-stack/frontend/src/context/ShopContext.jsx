@@ -17,11 +17,17 @@ const ShopContextProvider = (props) => {
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
   const [order_Data, set_OrderData] = useState({
-    address : '',
-    items : [],
-    amount : 0
+    address: "",
+    items: [],
+    amount: 0,
   });
   const navigate = useNavigate();
+
+  function calculateTotalPrice(products) {
+    return products.reduce((total, product) => {
+      return total + product.price * product.quantity;
+    }, 0);
+  }
 
   const generateInvoicePDF = async (orderData) => {
     const { items, address } = orderData;
@@ -37,7 +43,7 @@ const ShopContextProvider = (props) => {
     doc.setFontSize(12);
     doc.text(
       `Ground Floor, Tower A, TechPark Business Center, Electronic City Phase 1, 
-      Hosur Road, Bengaluru, Karnataka - 560100, India`,
+  Hosur Road, Bengaluru, Karnataka - 560100, India`,
       20,
       30
     );
@@ -46,11 +52,17 @@ const ShopContextProvider = (props) => {
     doc.text(`Invoice To:`, 20, 50);
     doc.text(`Name: ${userName}`, 20, 60);
     doc.text(`Email: ${email}`, 20, 70);
-    doc.text(`Address: ${fullAddress}`, 20, 80);
 
-    // Add a line break before table
+    // Split the address if it’s too long to fit in one line
+    const addressLines = doc.splitTextToSize(`Address: ${fullAddress}`, 170);
+    addressLines.forEach((line, index) => {
+      doc.text(line, 20, 80 + index * 10);
+    });
+
+    // Add a line break before the table
+    const addressEndY = 80 + addressLines.length * 10;
     doc.setLineWidth(0.5);
-    doc.line(20, 90, 190, 90);
+    doc.line(20, addressEndY + 10, 190, addressEndY + 10);
 
     // Prepare table with item data
     const tableColumn = ["Description", "Quantity", "Price"];
@@ -67,13 +79,24 @@ const ShopContextProvider = (props) => {
 
     // Adding table using autoTable
     doc.autoTable({
-      startY: 100,
+      startY: addressEndY + 20,
       head: [tableColumn],
       body: tableRows,
     });
 
-    // Add total at the bottom
-    const totalPrice = getCartAmount() + delivery_fee;
+    // Calculate total amount with delivery fee
+    const totalAmount = items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+    const totalPrice = totalAmount + delivery_fee;
+
+    // Add delivery fee and total at the bottom
+    doc.text(
+      `Delivery Fee: $${delivery_fee.toFixed(2)}`,
+      160,
+      doc.lastAutoTable.finalY + 10
+    );
     doc.text(
       `Total: $${totalPrice.toFixed(2)}`,
       160,
@@ -167,8 +190,8 @@ const ShopContextProvider = (props) => {
           { itemId, size, quantity },
           { headers: { token } }
         );
-        if(response && quantity == 0){
-            toast.success("Item removed from Cart");
+        if (response && quantity == 0) {
+          toast.success("Item removed from Cart");
         }
       } catch (error) {
         console.log(error);
@@ -256,7 +279,7 @@ const ShopContextProvider = (props) => {
     order_Data,
     set_OrderData,
     token,
-    generateInvoicePDF
+    generateInvoicePDF,
   };
 
   return (

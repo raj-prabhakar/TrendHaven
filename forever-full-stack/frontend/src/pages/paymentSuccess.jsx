@@ -10,27 +10,20 @@ const PaymentSuccess = () => {
   const [t, setT] = useState(5); // initial countdown time
   const navigate = useNavigate();
 
-  const {
-    setCartItems,
-    order_Data,
-    set_OrderData,
-    token,
-    backendUrl,
-    generateInvoicePDF,
-  } = useContext(ShopContext);
+  const [orderData, setOrderData] = useState(null);
 
-  console.log(order_Data, "order here");
+  const { setCartItems, token, backendUrl, generateInvoicePDF } =
+    useContext(ShopContext);
 
   const handlePayment = async () => {
     try {
       const response = await axios.post(
         backendUrl + "/api/order/place",
-        order_Data,
+        orderData,
         { headers: { token } }
       );
       if (response.data.success) {
         setCartItems({});
-        set_OrderData(null);
         await generateInvoicePDF(orderData); // Generate and send PDF invoice
         toast.success("Order Placed Successfully");
         startCountdown(); // Start the countdown timer after payment success
@@ -55,11 +48,17 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
-    if (token && order_Data) {
-        console.log("here");
+    let storedOrderData = localStorage.getItem("order_Data");
+    storedOrderData = JSON.parse(storedOrderData);
+    setOrderData(storedOrderData);
+  }, []);
+
+  useEffect(() => {
+    if (token && orderData) {
+      console.log(orderData, "order here");
       handlePayment();
     }
-  }, []);
+  }, [orderData]);
 
   return (
     <div

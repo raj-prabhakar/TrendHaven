@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
@@ -41,6 +41,11 @@ const PlaceOrder = () => {
 
   const isFormComplete = () => {
     return Object.values(formData).every((field) => field.trim() !== "");
+  };
+
+  const handleRazorPay = (orderData) => {
+    localStorage.setItem("order_Data", JSON.stringify(orderData));
+    navigate("/paymentbutton", { state: { amount: orderData.amount } });
   };
 
   const onSubmitHandler = async (event) => {
@@ -107,7 +112,7 @@ const PlaceOrder = () => {
           break;
 
         case "razorpay":
-          // handleRazorPay();
+          handleRazorPay(orderData);
           break;
 
         default:

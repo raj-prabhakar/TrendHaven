@@ -134,6 +134,7 @@ const Orders = () => {
   };
 
   const loadOrderData = async () => {
+    setLoading(true);
     try {
       if (!token) {
         return null;
@@ -166,7 +167,11 @@ const Orders = () => {
         });
         setorderData(allOrdersItem.reverse());
       }
-    } catch (error) {}
+    } catch (error) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

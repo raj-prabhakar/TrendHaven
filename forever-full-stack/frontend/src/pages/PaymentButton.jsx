@@ -18,7 +18,6 @@ const PaymentComponent = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/user/user-data/${userId}`
       );
       setUserData(response.data.user);
-      console.log(userData, "user data here");
     } catch (error) {
       console.log(error);
     }
@@ -54,13 +53,17 @@ const PaymentComponent = () => {
       razorpayInstance.open();
     } catch (error) {
       console.error("Error opening Razorpay checkout:", error);
+      navigate("/place-order");
     }
   };
 
   useEffect(() => {
-    checkoutHandler(); // Automatically trigger payment on component mount
     handleUserData();
   }, []);
+
+  useEffect(() => {
+    checkoutHandler(); // Automatically trigger payment on component mount
+  }, [userData])
 
   return (
     <></>
