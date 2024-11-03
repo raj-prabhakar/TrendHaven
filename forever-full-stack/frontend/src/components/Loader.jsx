@@ -9,10 +9,14 @@ const override = {
 
 const App = () => {
   const [loading, setLoading] = useState(true);
-  const [color, setColor] = useState("#ffffff");
+  const [color, setColor] = useState("#000000"); // Use black color for better visibility
 
   return (
-    <div className="sweet-loading flex justify-center items-center min-h-screen">
+    <div className="relative flex justify-center items-center min-h-screen">
+      <div
+        className="absolute inset-0 bg-white opacity-75"
+        style={{ zIndex: -1 }}
+      ></div>
       <ClipLoader
         color={color}
         loading={loading}

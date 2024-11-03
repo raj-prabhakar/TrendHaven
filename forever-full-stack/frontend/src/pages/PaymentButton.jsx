@@ -12,6 +12,8 @@ const PaymentComponent = () => {
 
   const userId = localStorage.getItem("userId");
 
+  const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
   const handleUserData = async () => {
     try {
       const response = await axios.get(
@@ -27,7 +29,7 @@ const PaymentComponent = () => {
     try {
       const {
         data: { order },
-      } = await axios.post("http://localhost:4000/api/razorpay/checkout", {
+      } = await axios.post(`${VITE_BACKEND_URL}/api/razorpay/checkout`, {
         amount: amount, // replace with actual amount in paise if needed
       });
 
@@ -38,7 +40,7 @@ const PaymentComponent = () => {
         name: "Forever",
         description: "Test Transaction",
         order_id: order.id,
-        callback_url: "http://localhost:4000/api/razorpay/paymentverification",
+        callback_url: `${VITE_BACKEND_URL}/api/razorpay/paymentverification`,
         prefill: {
           name: userData?.name || "John Doe",
           email: userData?.email || "john.doe@example.com",
