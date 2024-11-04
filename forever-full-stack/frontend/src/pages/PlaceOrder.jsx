@@ -150,10 +150,13 @@ const PlaceOrder = () => {
                 );
 
                 const address = response.data.address;
+
+                const street = response.data.display_name;
+
                 setFormData((prevData) => ({
                   ...prevData,
-                  street: address.road || "",
-                  city: address.city || "",
+                  street: street || address.road || "",
+                  city: address.city || address.town || "",
                   state: address.state || "",
                   zipcode: address.postcode || "",
                   country: address.country || "",
